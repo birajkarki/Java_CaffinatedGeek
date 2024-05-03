@@ -1,0 +1,12 @@
+Order details:
+Name: test
+Order number: 0450450450
+Item: Cappuccino (30210)
+Milk: Full-cream
+
+Order details:
+Name: asas
+Order number: 2121211221
+Item: Flat White Sucre (30223)
+Milk: Soy
+
