@@ -1,23 +1,18 @@
 import java.util.Set;
 
 public class Tea {
-    public static final int DEFAULT_STEEPING_TIME = 0;
-    public static final int DEFAULT_ID = 0;
-    // Instance variables
+    private final String type; 
     private final int menuId;
     private final String menuName;
+    private final double price;
     private final int temperature;
     private final int steepingTime;
-    private final double price;
     private final Sugar sugar;
     private final Set<Milk> milk;
     private final Set<Extras> extras;
-    private String description; 
     private double minPrice;
     private double maxPrice;
 
-
-    // Sugar enum
     public enum Sugar {
         YES("Yes"),
         NO("No"),
@@ -35,57 +30,22 @@ public class Tea {
         }
     }
 
-    // Milk enum
-    public enum Milk {
-        FULL_CREAM("Full Cream"),
-        SKIMMED("Skimmed"),
-        ALMOND("Almond"),
-        SOY("Soy"),
-        COCONUT("Coconut");
-
-        private final String label;
-
-        Milk(String label) {
-            this.label = label;
-        }
-
-        @Override
-        public String toString() {
-            return label;
-        }
-    }
-
-    // Extras enum
-    public enum Extras {
-        WHIPPED_CREAM("Whipped Cream"),
-        CHOCOLATE_SYRUP("Chocolate Syrup"),
-        CARAMEL_SYRUP("Caramel Syrup"),
-        VANILLA_SYRUP("Vanilla Syrup");
-
-        private final String label;
-
-        Extras(String label) {
-            this.label = label;
-        }
-
-        @Override
-        public String toString() {
-            return label;
-        }
-    }
-
-    // Constructor
-    public Tea(int menuId, String menuName, double price, int temperature, int steepingTime, Tea.Sugar sugar, Set<Milk> selectedMilkSet, Set<Extras> selectedExtras) {
+    public Tea(String type, int menuId, String menuName, double price, int temperature, int steepingTime, Sugar sugar, Set<Milk> milk, Set<Extras> extras) {
+        this.type = type;
         this.menuId = menuId;
         this.menuName = menuName;
         this.price = price;
         this.temperature = temperature;
         this.steepingTime = steepingTime;
         this.sugar = sugar;
-        this.milk = selectedMilkSet;
-        this.extras = selectedExtras;
+        this.milk = milk;
+        this.extras = extras;
     }
-    // Getters
+
+    public String getType() {
+        return type;
+    }
+
     public int getMenuId() {
         return menuId;
     }
@@ -93,6 +53,7 @@ public class Tea {
     public String getMenuName() {
         return menuName;
     }
+
     public double getPrice() {
         return price;
     }
@@ -117,23 +78,26 @@ public class Tea {
         return extras;
     }
 
-    public String getDescription() {
-        return description;
+    public double getMinPrice() {
+        return minPrice;
     }
 
     public void setMinPrice(double minPrice) {
         this.minPrice = minPrice;
     }
 
+    public double getMaxPrice() {
+        return maxPrice;
+    }
+
     public void setMaxPrice(double maxPrice) {
         this.maxPrice = maxPrice;
     }
 
-    public double getMinPrice() {
-        return minPrice;
+    public boolean matchesCriteria(Tea userCriteria) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'matchesCriteria'");
     }
 
-    public double getMaxPrice() {
-        return maxPrice;
-    }
+    // Define Milk and Extras interfaces here
 }

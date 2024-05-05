@@ -28,8 +28,8 @@ public class MenuSearcher {
 
         if (choice == 0) {
             // User selected Coffee
-            Coffee userCriteria = getUserDreamCoffee();
-            List<Coffee> potentialMatches = allMenus.findMatchCoffee(userCriteria);
+            Beverage userCriteria = getUserDreamCoffee();
+            List<Beverage> potentialMatches = allMenus.findMatchCoffee(userCriteria);
             if (!potentialMatches.isEmpty()) {
                 displayCoffeeResults(potentialMatches, userCriteria);
             } else {
@@ -54,7 +54,7 @@ public class MenuSearcher {
         }
     }
 
-    private static Coffee getUserDreamCoffee() {
+    private static Beverage getUserDreamCoffee() {
         int numShots = 0;
 
         while (true) {
@@ -183,8 +183,9 @@ public class MenuSearcher {
 
         // Now, you have the selected extras in the `selectedExtras` set.
 
-        Coffee.Sugar sugar = (Coffee.Sugar) JOptionPane.showInputDialog(null, "Do you want to add Sugar ?.", appName,
-                JOptionPane.QUESTION_MESSAGE, null, Coffee.Sugar.values(), Coffee.Sugar.NO);
+        Beverage.Sugar sugar = (Beverage.Sugar) JOptionPane.showInputDialog(null, "Do you want to add Sugar ?.",
+                appName,
+                JOptionPane.QUESTION_MESSAGE, null, Beverage.Sugar.values(), Beverage.Sugar.NO);
         if (sugar == null)
             System.exit(0);
 
@@ -210,13 +211,15 @@ public class MenuSearcher {
                 JOptionPane.showMessageDialog(null, "Maximum Price must be greater Minimum Price.");
         }
 
-        Coffee userCriteria = new Coffee(0, "", 0, numShots, sugar, selectedMilkSet, selectedExtras, "");
+        Beverage userCriteria = new Beverage("type", 0, "", 0, numShots, sugar, selectedMilkSet, selectedExtras, "");
         userCriteria.setMinPrice(minPrice);
         userCriteria.setMaxPrice(maxPrice);
         return userCriteria;
     }
 
     private static Tea getUserDreamTea() {
+        int temperature = 0;
+        int steepingTime = 0;
 
         String[] options = {
                 "80 degrees: For a mellow, gentler taste",
@@ -226,7 +229,6 @@ public class MenuSearcher {
                 "100 degrees: For a bold, strong flavour",
                 "Skip"
         };
-        int temperature;
 
         // Prompt user to select preferred temperature
         String tempInput = (String) JOptionPane.showInputDialog(null, "Select preferred temperature:",
@@ -249,15 +251,21 @@ public class MenuSearcher {
         }
 
         // Asking user for preferred steeping time
-        String steepTimeInput = JOptionPane.showInputDialog(null, "Enter preferred steeping time (in minutes):",
+        String steepTimeInput = JOptionPane.showInputDialog(null,
+                "Enter preferred steeping time (in minutes) or 'I don't mind':",
                 appName, JOptionPane.QUESTION_MESSAGE);
 
-        int steepingTime;
         try {
             if (steepTimeInput == null || steepTimeInput.isEmpty()) {
                 JOptionPane.showMessageDialog(null, "No steeping time entered. Defaulting to 5 minutes.", appName,
                         JOptionPane.INFORMATION_MESSAGE);
                 steepingTime = 5; // Default to 5 minutes
+            } else if (steepTimeInput.equalsIgnoreCase("I don't mind")) {
+                JOptionPane.showMessageDialog(null, "Steeping time: I don't mind.", appName,
+                        JOptionPane.INFORMATION_MESSAGE);
+                // Handle "I don't mind" case according to your application's logic
+                // For example, you might choose to set a default steeping time or proceed
+                // without setting a specific time.
             } else {
                 steepingTime = Integer.parseInt(steepTimeInput);
                 if (steepingTime <= 0) {
@@ -269,10 +277,10 @@ public class MenuSearcher {
                         JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(null, "Invalid input for steeping time. Please enter a valid number.",
+            JOptionPane.showMessageDialog(null,
+                    "Invalid input for steeping time. Please enter a valid number or 'I don't mind'.",
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
-
         // Getting the sugar preference
         Tea.Sugar sugar = (Tea.Sugar) JOptionPane.showInputDialog(null, "Do you want to add Sugar?", appName,
                 JOptionPane.QUESTION_MESSAGE, null, Tea.Sugar.values(), Tea.Sugar.NO);
@@ -345,7 +353,7 @@ public class MenuSearcher {
         int minPrice = -1, maxPrice = -1;
         while (minPrice == -1) {
             try {
-                minPrice = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter your minimum price for coffee. ",
+                minPrice = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter your minimum price for tea. ",
                         appName, JOptionPane.QUESTION_MESSAGE));
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(null, "Invalid. Please try again.");
@@ -354,7 +362,7 @@ public class MenuSearcher {
         // max price cannot be less than min price
         while (maxPrice < minPrice) {
             try {
-                maxPrice = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter your maximum price for coffee.",
+                maxPrice = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter your maximum price for tea.",
                         appName, JOptionPane.QUESTION_MESSAGE));
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(null, "Invalid. Please try again.");
@@ -363,7 +371,7 @@ public class MenuSearcher {
                 JOptionPane.showMessageDialog(null, "Maximum Price must be greater Minimum Price.");
         }
 
-        Tea userCriteria = new Tea(0, "", 0, temperature, steepingTime, sugar, selectedMilkSet, selectedExtras);
+        Tea userCriteria = new Tea("type", 0, "", 0, temperature, steepingTime, sugar, selectedMilkSet, selectedExtras);
         userCriteria.setMinPrice(minPrice);
         userCriteria.setMaxPrice(maxPrice);
 
@@ -395,7 +403,7 @@ public class MenuSearcher {
             System.err.println("Cannot read the file");
             System.exit(0);
         }
-
+    
         // Iterate over each line of the menu data
         for (String line : menuData) {
             String[] splitParts = line.split("\\[");
@@ -403,28 +411,45 @@ public class MenuSearcher {
                 // Skip invalid lines
                 continue;
             }
-
+    
             // Extract coffee attributes
             String[] coffeeAttributes = splitParts[0].split(",", -1);
-
+    
             if (coffeeAttributes.length < 5) {
                 // Skip invalid lines
                 continue;
             }
-
+    
             int coffeeId;
             try {
                 coffeeId = Integer.parseInt(coffeeAttributes[0].trim());
             } catch (NumberFormatException e) {
                 // Skip invalid lines
+                System.err.println("Invalid coffee ID: " + coffeeAttributes[0].trim());
                 continue;
             }
-
+    
             String coffeeName = coffeeAttributes[1].trim();
-            double price = Double.parseDouble(coffeeAttributes[2].trim());
-            int numShots = Integer.parseInt(coffeeAttributes[3].trim());
-            Coffee.Sugar sugar = coffeeAttributes[4].equalsIgnoreCase("yes") ? Coffee.Sugar.YES : Coffee.Sugar.NO;
-
+            double price;
+            try {
+                price = Double.parseDouble(coffeeAttributes[2].trim());
+            } catch (NumberFormatException e) {
+                // Skip invalid lines
+                System.err.println("Invalid price: " + coffeeAttributes[2].trim());
+                continue;
+            }
+            
+            int numShots;
+            try {
+                numShots = Integer.parseInt(coffeeAttributes[3].trim());
+            } catch (NumberFormatException e) {
+                // Skip invalid lines
+                System.err.println("Invalid number of shots: " + coffeeAttributes[3].trim());
+                continue;
+            }
+            
+            Beverage.Sugar sugar = coffeeAttributes[4].equalsIgnoreCase("yes") ? Beverage.Sugar.YES : Beverage.Sugar.NO;
+    
             // Extract milk data
             String[] extractMilk = splitParts[1].replace("]", "").replace("\r", "").split(",\\s*");
             Set<Milk> milk = new HashSet<>();
@@ -435,9 +460,10 @@ public class MenuSearcher {
                     milk.add(milkEnum);
                 } catch (IllegalArgumentException ignored) {
                     // Handle invalid milk options gracefully
+                    System.err.println("Invalid milk option: " + item);
                 }
             }
-
+    
             // Extract extras data
             String[] extractExtra = splitParts[2].replace("]", "").replace("\r", "").split(",\\s*");
             Set<Extras> extras = new HashSet<>();
@@ -448,25 +474,25 @@ public class MenuSearcher {
                     extras.add(extrasEnum);
                 } catch (IllegalArgumentException ignored) {
                     // Handle invalid extras options gracefully
+                    System.err.println("Invalid extras option: " + item);
                 }
             }
-
+    
             // Extract description of the coffee
             String description = splitParts[3].replace("]", "").replace("\r", "");
-
-            Coffee coffee = new Coffee(coffeeId, coffeeName, price, numShots, sugar, milk, extras, description);
+    
+            Beverage coffee = new Beverage("type", coffeeId, coffeeName, price, numShots, sugar, milk, extras, description);
             menus.addCoffeeMenu(coffee);
         }
         return menus;
     }
-
-    // displaying result of the matching coffee and asking user to select the coffee
+    
     // if they wish to order.
-    private static void displayCoffeeResults(List<Coffee> potentialMatch, Coffee userCriteria) {
+    private static void displayCoffeeResults(List<Beverage> potentialMatch, Beverage userCriteria) {
         StringBuilder message = new StringBuilder();
         String[] options = new String[potentialMatch.size()];
         for (int i = 0; i < potentialMatch.size(); i++) {
-            Coffee coffee = potentialMatch.get(i);
+            Beverage coffee = potentialMatch.get(i);
             String milkString = coffee.getMilk().toString();
             String extrasString = coffee.getExtras().toString();
 
@@ -495,8 +521,8 @@ public class MenuSearcher {
             Geek user = getUserInformation();
 
             // write in file
-            Coffee selectedCoffee = null;
-            for (Coffee coffee : potentialMatch) {
+            Beverage selectedCoffee = null;
+            for (Beverage coffee : potentialMatch) {
                 if (coffee.getMenuName().equals(order)) {
                     selectedCoffee = coffee;
                     break;
@@ -527,7 +553,7 @@ public class MenuSearcher {
 
             // Message per tea
             message.append(tea.getMenuName()).append(" (").append(tea.getMenuId()).append(")\n")
-                    .append(tea.getDescription()).append("\n")
+                    // .append(tea.getDescription()).append("\n")
                     .append("Ingredients:\n")
                     .append("Temperature: ").append(tea.getTemperature()).append("°C\n")
                     .append("Steeping Time: ").append(tea.getSteepingTime()).append(" minutes\n")
@@ -566,11 +592,6 @@ public class MenuSearcher {
             JOptionPane.showMessageDialog(null, "Thank you for considering our tea menu. Have a great day!",
                     "Order Skipped", JOptionPane.INFORMATION_MESSAGE);
         }
-    }
-
-    private static void writeOrderToFile(Geek user, Tea selectedTea, Tea userCriteria) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'writeOrderToFile'");
     }
 
     // getting user infomation and returning record of geek.
@@ -629,7 +650,7 @@ public class MenuSearcher {
     }
 
     // writing order to file
-    private static void writeOrderToFile(Geek user, Coffee selectedCoffee, Coffee userCriteria) {
+    private static void writeOrderToFile(Geek user, Beverage selectedCoffee, Beverage userCriteria) {
         try {
             String fileName = "order" + ".txt";
             FileWriter writer = new FileWriter(fileName, true);
@@ -641,6 +662,27 @@ public class MenuSearcher {
             writer.write("Name: " + user.name() + "\n");
             writer.write("Order number: " + user.phoneNumber() + "\n");
             writer.write("Item: " + selectedCoffee.getMenuName() + " (" + selectedCoffee.getMenuId() + ")\n");
+            writer.write("Milk: " + (milkString) + "\n\n");
+
+            writer.close();
+            System.out.println("Order details written to " + fileName);
+        } catch (IOException e) {
+            System.err.println("Error writing order to file: " + e.getMessage());
+        }
+    }
+
+    private static void writeOrderToFile(Geek user, Tea selectedTea, Tea userCriteria) {
+        try {
+            String fileName = "order" + ".txt";
+            FileWriter writer = new FileWriter(fileName, true);
+            String milkString = userCriteria.getMilk().toString();
+            milkString = milkString.substring(1, milkString.length() - 1);
+
+            // Writing order details
+            writer.write("Order details:\n");
+            writer.write("Name: " + user.name() + "\n");
+            writer.write("Order number: " + user.phoneNumber() + "\n");
+            writer.write("Item: " + selectedTea.getMenuName() + " (" + selectedTea.getMenuId() + ")\n");
             writer.write("Milk: " + (milkString) + "\n\n");
 
             writer.close();

@@ -31,7 +31,7 @@ tea,80394,Herbal Infusion,4.20,NA,100,7,no,[],[ice,Mint,basil,Cream, maple syrup
 coffee,30220,Cortado,4.50,1,NA,NA,no,[Full-cream],[],[Equal parts of espresso and steamed milk, creating a balanced and rich coffee beverage.]
 
 
-menu item ID,menu item name,price,numberOfShots,sugar,milk,extras,description
+menu item ID,menu item name,price,temperature, numberOfShots, steeping time, sugar,milk,extras,description
 30210,Cappuccino,4.50,2,yes,[Full-cream,Soy],[Chocolate powder, Cinnamon],[Classic Italian espresso drink with steamed milk foam and a sprinkle of chocolate powder and cinnamon.]
 30211,Latte,5.00,1,no,[Full-cream,Skim],[Vanilla syrup],[Smooth espresso with steamed milk and a touch of vanilla syrup.]
 30212,Espresso,3.00,1,yes,[],[],[Pure and intense shot of espresso, perfect for a quick geek-me-up.]
@@ -47,3 +47,5 @@ menu item ID,menu item name,price,numberOfShots,sugar,milk,extras,description
 30219,Cafe au Lait,5.50,1,yes,[Oat,Skim,Full-cream],[Cinnamon],[Equal parts of brewed coffee and steamed milk, resulting in a creamy and comforting drink, topped with a sprinkle of cinnamon.]
 30221,Cafe au Lait Forte,6.50,2,yes,[Oat,Skim,Full-cream],[Cinnamon],[Equal parts of brewed coffee and steamed milk, resulting in a creamy and comforting drink, topped with a sprinkle of cinnamon.]
 30220,Cortado,4.50,1,no,[Full-cream],[],[Equal parts of espresso and steamed milk, creating a balanced and rich coffee beverage.]
+80394,Herbal Infusion,4.20,NA,100,7,no,[],[ice,Mint,basil,Cream, maple syrup],[Unoxidized tea leaves with a light, fresh taste and numerous health benefits.]
+49960,White Tea Tropical,4.30,NA,80,2,yes,[Coconut],[honey,agave syrup,mint],[Delicate white tea with a tropical twist.]

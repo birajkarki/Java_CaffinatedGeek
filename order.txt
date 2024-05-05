@@ -34,3 +34,39 @@ Order number: 9877878789
 Item: Flat White Sucre (30223)
 Milk: Soy
 
+Order details:
+Name: hellotest
+Order number: 9802353621
+Item: Mocha (30213)
+Milk: Full-cream
+
+Order details:
+Name: biraj
+Order number: 9808426215
+Item: Cappuccino (30210)
+Milk: Full-cream
+
+Order details:
+Name: bira
+Order number: 9808426215
+Item: Mocha (30213)
+Milk: Full-cream
+
+Order details:
+Name: biraj
+Order number: 9808426215
+Item: Mocha (30213)
+Milk: Full-cream
+
+Order details:
+Name: biraj
+Order number: 9808426215
+Item: Mocha (30213)
+Milk: Full-cream
+
+Order details:
+Name: biraj
+Order number: 9808426215
+Item: Mocha (30213)
+Milk: Full-cream
+

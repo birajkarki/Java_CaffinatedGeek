@@ -2,11 +2,11 @@ import java.util.*;
 
 public class Menu {
 
-    private final List<Coffee> coffeeMenuData = new ArrayList<>();
+    private final List<Beverage> coffeeMenuData = new ArrayList<>();
     private final List<Tea> teaMenuData = new ArrayList<>();
 
     // Method to add coffee object to database
-    public void addCoffeeMenu(Coffee coffee){
+    public void addCoffeeMenu(Beverage coffee){
         this.coffeeMenuData.add(coffee);
     }
 
@@ -16,11 +16,11 @@ public class Menu {
     }
 
     // Method to find coffee menu items matching user criteria
-    public List<Coffee> findMatchCoffee(Coffee userCriteria){
-        List<Coffee> compatibleCoffee = new ArrayList<>();
+    public List<Beverage> findMatchCoffee(Beverage userCriteria){
+        List<Beverage> compatibleCoffee = new ArrayList<>();
 
         // Loop through each coffee item in the menu data
-        for (Coffee coffee : this.coffeeMenuData) {
+        for (Beverage coffee : this.coffeeMenuData) {
             // Check if the number of shots in the coffee matches the user's criteria
             if (coffee.getNumberOfShots() != userCriteria.getNumberOfShots()) {
                 // Skip this coffee if the number of shots doesn't match
