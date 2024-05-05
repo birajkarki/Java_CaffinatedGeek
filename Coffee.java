@@ -7,28 +7,30 @@ public class Coffee {
     // Instance variables
 
     private final int menuId;
-
     private final String menuName;
-
     private final double price;
     private final int numberOfShots;
     private final Sugar sugar;
-
     private final Set<Milk> milk;
     private final Set<Extras> extras;
-
     private final String description;
     private double minPrice;
     private double maxPrice;
 
     public enum Sugar {
-        YES, NO;
-
+        YES("Yes"),
+        NO("No"),
+        DONT_MIND("I don't mind");
+    
+        private final String label;
+    
+        Sugar(String label) {
+            this.label = label;
+        }
+    
+        @Override
         public String toString() {
-            return switch (this) {
-                case YES -> "yes";
-                case NO -> "no";
-            };
+            return label;
         }
     }
 
@@ -75,7 +77,6 @@ public class Coffee {
     public String getDescription() {
         return description;
     }
-
     public void setMinPrice(double minPrice) {
         this.minPrice = minPrice;
     }

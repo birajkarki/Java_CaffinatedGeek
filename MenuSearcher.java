@@ -16,30 +16,113 @@ public class MenuSearcher {
     private final static String iconPath = "./the_caffeinated_geek.png";
     private static Menu allMenus;
 
-    // main method
+    // Main method
     public static void main(String[] args) {
-        allMenus = loadMenuData(); // loads all the text file data.
+        allMenus = loadMenuData(); // Loads all the text file data.
         ImageIcon icon = new ImageIcon(iconPath);
-        JOptionPane.showMessageDialog(null, "You are welcome to our app!\n\tTo Begin, use OK.", appName, JOptionPane.QUESTION_MESSAGE, icon);
-        Coffee userCriteria = getUserDreamCoffee();
-        List<Coffee> potentialMatches = allMenus.findMatch(userCriteria);
-        if (!potentialMatches.isEmpty() ){
-            display(potentialMatches, userCriteria);
+        // Prompt user to choose between coffee and tea
+        int choice = JOptionPane.showOptionDialog(null,
+                "Welcome to our app! Would you like to order:\n1) Coffee\n2) Tea",
+                appName, JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+                icon, new String[] { "Coffee", "Tea" }, "Coffee");
+
+        if (choice == 0) {
+            // User selected Coffee
+            Coffee userCriteria = getUserDreamCoffee();
+            List<Coffee> potentialMatches = allMenus.findMatchCoffee(userCriteria);
+            if (!potentialMatches.isEmpty()) {
+                displayCoffeeResults(potentialMatches, userCriteria);
+            } else {
+                JOptionPane.showMessageDialog(null, "Ouch!! Our coffee menu cannot meet your expectations", appName,
+                        JOptionPane.QUESTION_MESSAGE, icon);
+                System.exit(0);
+            }
+        } else if (choice == 1) {
+            // User selected Tea
+            Tea userCriteria = getUserDreamTea();
+            List<Tea> potentialMatches = allMenus.findMatchTea(userCriteria);
+            if (!potentialMatches.isEmpty()) {
+                displayTeaResults(potentialMatches, userCriteria);
+            } else {
+                JOptionPane.showMessageDialog(null, "Ouch!! Our tea menu cannot meet your expectations", appName,
+                        JOptionPane.QUESTION_MESSAGE, icon);
+                System.exit(0);
+            }
         } else {
-            JOptionPane.showMessageDialog(null, "Ouch!! our menu cannot meet your expectations" + "\n\tTo exit, click OK.", appName, JOptionPane.QUESTION_MESSAGE, icon);
+            // User closed the dialog
             System.exit(0);
         }
-
     }
 
     private static Coffee getUserDreamCoffee() {
+        int numShots = 0;
 
+        while (true) {
+            JPanel panel = new JPanel();
+            panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-        
+            // Label indicating the purpose of the dropdown menu
+            JLabel label1 = new JLabel("Select number of shots:");
+            panel.add(label1);
 
+            // Dropdown menu with predefined options
+            String[] options = { "1", "2", "3" };
+            JComboBox<String> comboBox = new JComboBox<>(options);
+            comboBox.setSelectedIndex(0); // Default selection
+            panel.add(comboBox);
 
-        Milk milk = (Milk) JOptionPane.showInputDialog(null, "Which milk would you prefer?.", appName, JOptionPane.QUESTION_MESSAGE, null, Milk.values(), Milk.NONE);
-        if (milk == null) System.exit(0);
+            // Label indicating the purpose of the text field
+            JLabel label2 = new JLabel("Or input custom number of shots:");
+            panel.add(label2);
+
+            // Text field for entering a custom value
+            JTextField textField = new JTextField(10);
+            panel.add(textField);
+
+            int result = JOptionPane.showConfirmDialog(null, panel, "Number of Shots", JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.QUESTION_MESSAGE);
+
+            // If user cancels, exit the application
+            if (result == JOptionPane.CANCEL_OPTION) {
+                System.exit(0);
+            }
+
+            // If user clicks OK
+            if (result == JOptionPane.OK_OPTION) {
+                String selectedOption = (String) comboBox.getSelectedItem();
+                String customInput = textField.getText().trim();
+
+                if (!customInput.isEmpty()) {
+                    try {
+                        numShots = Integer.parseInt(customInput);
+                        if (numShots <= 0) {
+                            JOptionPane.showMessageDialog(null, "Number of shots must be greater than 0.", "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                            continue;
+                        }
+                    } catch (NumberFormatException e) {
+                        JOptionPane.showMessageDialog(null, "Invalid input. Please enter a valid number.", "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                        continue;
+                    }
+                } else {
+                    numShots = Integer.parseInt(selectedOption);
+                }
+
+                if (numShots < 1 || numShots > 3) {
+                    JOptionPane.showMessageDialog(null, "Number of shots must be 1, 2, or 3.", "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } else {
+                    break; // Exit loop if input is valid
+                }
+            }
+        }
+
+        // Get the milk
+        Milk milk = (Milk) JOptionPane.showInputDialog(null, "Which milk would you prefer?.", appName,
+                JOptionPane.QUESTION_MESSAGE, null, Milk.values(), Milk.SKIP);
+        if (milk == null)
+            System.exit(0);
 
         // Convert the selected milk into a Set<Milk>
         Set<Milk> selectedMilkSet = new HashSet<>();
@@ -49,7 +132,10 @@ public class MenuSearcher {
         JPanel panel = new JPanel(new GridLayout(0, 1));
 
         // Create checkboxes for each extra
-        Set<Extras> selectedExtras = new HashSet<> ();
+        Set<Extras> selectedExtras = new HashSet<>();
+        JCheckBox skipCheckBox = new JCheckBox("Skip");
+        panel.add(skipCheckBox);
+
         for (Extras extra : Extras.values()) {
             if (extra != Extras.SKIP) {
                 JCheckBox checkBox = new JCheckBox(extra.toString());
@@ -58,84 +144,231 @@ public class MenuSearcher {
         }
 
         // Show the dialog with checkboxes for extras
-        int result = JOptionPane.showConfirmDialog(null, panel, "choose your preferences, else skip",
+        int result = JOptionPane.showConfirmDialog(null, panel, "Choose your preferences, or skip",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
 
         // Handle user selection
         if (result == JOptionPane.OK_OPTION) {
             // Loop through checkboxes to determine which extras were selected
-            for (Extras extra : Extras.values()) {
-                if (extra != Extras.SKIP) {
-                    // gets all the extras
-                    JCheckBox checkBox = (JCheckBox) panel.getComponent(extra.ordinal());
-                    if (checkBox.isSelected()) {
-                        selectedExtras.add(extra);
+            Component[] components = panel.getComponents();
+            for (int i = 0; i < components.length; i++) {
+                if (components[i] instanceof JCheckBox) {
+                    JCheckBox checkBox = (JCheckBox) components[i];
+                    if (checkBox.isSelected() && i != 0) { // Exclude the first checkbox (Skip)
+                        selectedExtras.add(Extras.values()[i - 1]);
                     }
-
                 }
             }
-            // If no extras were selected, add "Skip"
-            if (selectedExtras.isEmpty()) {
+
+            // If only the "Skip" checkbox is selected, add "Skip"
+            if (selectedExtras.isEmpty() && skipCheckBox.isSelected()) {
                 selectedExtras.add(Extras.SKIP);
-                JOptionPane.showMessageDialog(null, "You have skipped .", "Selected Options", JOptionPane.INFORMATION_MESSAGE);
-            }
-
-        }
-
-        Coffee.Sugar sugar = (Coffee.Sugar) JOptionPane.showInputDialog(null, "Do you want to add Sugar ?.", appName, JOptionPane.QUESTION_MESSAGE, null, Coffee.Sugar.values(), Coffee.Sugar.NO);
-        if (sugar == null) System.exit(0);
-
-        // Get the number of shots
-        int numShots;
-        while (true) {
-            String numShotsString = JOptionPane.showInputDialog(null, "Please enter the number of shots.", appName, JOptionPane.QUESTION_MESSAGE);
-            if (numShotsString == null)
-                System.exit(0); // Exit if user cancels
-            try {
-                numShots = Integer.parseInt(numShotsString);
-                if (numShots <= 0) {
-                    JOptionPane.showMessageDialog(null, "number of shots must be greater than 0.", "Error", JOptionPane.ERROR_MESSAGE);
-                } else {
-                    break; // Exit loop if input is valid
+                JOptionPane.showMessageDialog(null, "You have skipped.", "Selected Options",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else if (selectedExtras.isEmpty()) {
+                // If no extras were selected and "Skip" checkbox is not selected, show an error
+                // message
+                JOptionPane.showMessageDialog(null, "Please select at least one extra or skip.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            } else {
+                // Show selected extras
+                StringBuilder message = new StringBuilder("Selected extras:\n");
+                for (Extras extra : selectedExtras) {
+                    message.append(extra).append("\n");
                 }
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null, "Invalid. Please enter a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, message.toString(), "Selected Options",
+                        JOptionPane.INFORMATION_MESSAGE);
             }
         }
 
-        if (numShots <= 0) {
-            JOptionPane.showMessageDialog(null, "Invalid number of shots.", "Error", JOptionPane.ERROR_MESSAGE);
-            return null; // Exit method if input is invalid
-        }
+        // Now, you have the selected extras in the `selectedExtras` set.
+
+        Coffee.Sugar sugar = (Coffee.Sugar) JOptionPane.showInputDialog(null, "Do you want to add Sugar ?.", appName,
+                JOptionPane.QUESTION_MESSAGE, null, Coffee.Sugar.values(), Coffee.Sugar.NO);
+        if (sugar == null)
+            System.exit(0);
 
         // for price
         int minPrice = -1, maxPrice = -1;
-        while(minPrice==-1) {
+        while (minPrice == -1) {
             try {
-                minPrice = Integer.parseInt(JOptionPane.showInputDialog(null,"Enter your minimum price for coffee. ",appName,JOptionPane.QUESTION_MESSAGE));
-            }
-            catch (NumberFormatException e){
-                JOptionPane.showMessageDialog(null,"Invalid. Please try again.");
+                minPrice = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter your minimum price for coffee. ",
+                        appName, JOptionPane.QUESTION_MESSAGE));
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null, "Invalid. Please try again.");
             }
         }
-        //max price cannot be less than min price
-        while(maxPrice<minPrice) {
+        // max price cannot be less than min price
+        while (maxPrice < minPrice) {
             try {
-                maxPrice = Integer.parseInt(JOptionPane.showInputDialog(null,"Enter your maximum price for coffee.",appName,JOptionPane.QUESTION_MESSAGE));
+                maxPrice = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter your maximum price for coffee.",
+                        appName, JOptionPane.QUESTION_MESSAGE));
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null, "Invalid. Please try again.");
             }
-            catch (NumberFormatException e){
-                JOptionPane.showMessageDialog(null,"Invalid. Please try again.");
-            }
-            if(maxPrice<minPrice) JOptionPane.showMessageDialog(null,"Maximum Price must be greater Minimum Price.");
+            if (maxPrice < minPrice)
+                JOptionPane.showMessageDialog(null, "Maximum Price must be greater Minimum Price.");
         }
 
-        Coffee userCriteria = new Coffee(0, "",0,numShots, sugar, selectedMilkSet, selectedExtras, "" );
-            userCriteria.setMinPrice(minPrice);
-            userCriteria.setMaxPrice(maxPrice);
-            return userCriteria;
+        Coffee userCriteria = new Coffee(0, "", 0, numShots, sugar, selectedMilkSet, selectedExtras, "");
+        userCriteria.setMinPrice(minPrice);
+        userCriteria.setMaxPrice(maxPrice);
+        return userCriteria;
+    }
+
+    private static Tea getUserDreamTea() {
+
+        String[] options = {
+                "80 degrees: For a mellow, gentler taste",
+                "85 degrees: For slightly sharper than mellow",
+                "90 degrees: Balanced, strong but not too strong",
+                "95 degrees: Strong, but not acidic",
+                "100 degrees: For a bold, strong flavour",
+                "Skip"
+        };
+        int temperature;
+
+        // Prompt user to select preferred temperature
+        String tempInput = (String) JOptionPane.showInputDialog(null, "Select preferred temperature:",
+                "Tea Temperature", JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+
+        // Handle user input
+        if (tempInput != null && !tempInput.equals("Skip")) {
+            temperature = Integer.parseInt(tempInput.split(" ")[0]);
+            String description = tempInput.split(":")[1].trim();
+
+            // Display selected temperature and description
+            JOptionPane.showMessageDialog(null, "You selected " + temperature + " degrees Celsius. " + description,
+                    "Tea Temperature", JOptionPane.INFORMATION_MESSAGE);
+        } else if (tempInput == null) {
+            JOptionPane.showMessageDialog(null, "Temperature selection cancelled.", "Tea Temperature",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, "Temperature selection skipped.", "Tea Temperature",
+                    JOptionPane.INFORMATION_MESSAGE);
         }
 
+        // Asking user for preferred steeping time
+        String steepTimeInput = JOptionPane.showInputDialog(null, "Enter preferred steeping time (in minutes):",
+                appName, JOptionPane.QUESTION_MESSAGE);
+
+        int steepingTime;
+        try {
+            if (steepTimeInput == null || steepTimeInput.isEmpty()) {
+                JOptionPane.showMessageDialog(null, "No steeping time entered. Defaulting to 5 minutes.", appName,
+                        JOptionPane.INFORMATION_MESSAGE);
+                steepingTime = 5; // Default to 5 minutes
+            } else {
+                steepingTime = Integer.parseInt(steepTimeInput);
+                if (steepingTime <= 0) {
+                    JOptionPane.showMessageDialog(null, "Invalid steeping time. Please enter a positive number.",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                    return null;
+                }
+                JOptionPane.showMessageDialog(null, "Preferred steeping time: " + steepingTime + " minutes.", appName,
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Invalid input for steeping time. Please enter a valid number.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+        // Getting the sugar preference
+        Tea.Sugar sugar = (Tea.Sugar) JOptionPane.showInputDialog(null, "Do you want to add Sugar?", appName,
+                JOptionPane.QUESTION_MESSAGE, null, Tea.Sugar.values(), Tea.Sugar.NO);
+        if (sugar == null)
+            System.exit(0);
+
+        // Getting the milk preference
+        Milk milk = (Milk) JOptionPane.showInputDialog(null, "Which milk would you prefer?", appName,
+                JOptionPane.QUESTION_MESSAGE, null, Milk.values(), Milk.SKIP);
+        if (milk == null)
+            System.exit(0);
+
+        // Converting the selected milk into a Set<Milk>
+        Set<Milk> selectedMilkSet = new HashSet<>();
+        selectedMilkSet.add(milk);
+
+        // Creating a panel to hold checkboxes for extras
+        JPanel panel = new JPanel(new GridLayout(0, 1));
+
+        // Create checkboxes for each extra
+        Set<Extras> selectedExtras = new HashSet<>();
+        JCheckBox skipCheckBox = new JCheckBox("Skip");
+        panel.add(skipCheckBox);
+
+        for (Extras extra : Extras.values()) {
+            if (extra != Extras.SKIP) {
+                JCheckBox checkBox = new JCheckBox(extra.toString());
+                panel.add(checkBox);
+            }
+        }
+
+        // Show the dialog with checkboxes for extras
+        int result = JOptionPane.showConfirmDialog(null, panel, "Choose your preferences, or skip",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        // Handle user selection
+        if (result == JOptionPane.OK_OPTION) {
+            // Loop through checkboxes to determine which extras were selected
+            Component[] components = panel.getComponents();
+            for (int i = 0; i < components.length; i++) {
+                if (components[i] instanceof JCheckBox) {
+                    JCheckBox checkBox = (JCheckBox) components[i];
+                    if (checkBox.isSelected() && i != 0) { // Exclude the first checkbox (Skip)
+                        selectedExtras.add(Extras.values()[i - 1]);
+                    }
+                }
+            }
+
+            // If only the "Skip" checkbox is selected, add "Skip"
+            if (selectedExtras.isEmpty() && skipCheckBox.isSelected()) {
+                selectedExtras.add(Extras.SKIP);
+                JOptionPane.showMessageDialog(null, "You have skipped.", "Selected Options",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else if (selectedExtras.isEmpty()) {
+                // If no extras were selected and "Skip" checkbox is not selected, show an error
+                // message
+                JOptionPane.showMessageDialog(null, "Please select at least one extra or skip.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            } else {
+                // Show selected extras
+                StringBuilder message = new StringBuilder("Selected extras:\n");
+                for (Extras extra : selectedExtras) {
+                    message.append(extra).append("\n");
+                }
+                JOptionPane.showMessageDialog(null, message.toString(), "Selected Options",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+        // for price
+        int minPrice = -1, maxPrice = -1;
+        while (minPrice == -1) {
+            try {
+                minPrice = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter your minimum price for coffee. ",
+                        appName, JOptionPane.QUESTION_MESSAGE));
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null, "Invalid. Please try again.");
+            }
+        }
+        // max price cannot be less than min price
+        while (maxPrice < minPrice) {
+            try {
+                maxPrice = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter your maximum price for coffee.",
+                        appName, JOptionPane.QUESTION_MESSAGE));
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null, "Invalid. Please try again.");
+            }
+            if (maxPrice < minPrice)
+                JOptionPane.showMessageDialog(null, "Maximum Price must be greater Minimum Price.");
+        }
+
+        Tea userCriteria = new Tea(0, "", 0, temperature, steepingTime, sugar, selectedMilkSet, selectedExtras);
+        userCriteria.setMinPrice(minPrice);
+        userCriteria.setMaxPrice(maxPrice);
+
+        return userCriteria;
+    }
 
     // method to find a checkbox by its label
     private static JCheckBox getCheckBoxByName(JPanel panel, String name) {
@@ -150,10 +383,8 @@ public class MenuSearcher {
         return null;
     }
 
-
-
-
-    // Method to load data from menu.txt and return an instance of the Menu class to save as a database
+    // Method to load data from menu.txt and return an instance of the Menu class to
+    // save as a database
     private static Menu loadMenuData() {
         Menu menus = new Menu();
         Path path = Path.of(filePath);
@@ -161,81 +392,80 @@ public class MenuSearcher {
         try {
             menuData = Files.readAllLines(path);
         } catch (IOException e) {
-            System.err.println("Cannot the file");
+            System.err.println("Cannot read the file");
             System.exit(0);
         }
 
+        // Iterate over each line of the menu data
+        for (String line : menuData) {
+            String[] splitParts = line.split("\\[");
+            if (splitParts.length < 2) {
+                // Skip invalid lines
+                continue;
+            }
 
-       //getting menu data
-        for (int i = 1; i < menuData.size(); i++) {
-            String[] splitParts = menuData.get(i).split("\\[");
+            // Extract coffee attributes
             String[] coffeeAttributes = splitParts[0].split(",", -1);
 
-            int coffeeId = Integer.parseInt(coffeeAttributes[0].trim());
+            if (coffeeAttributes.length < 5) {
+                // Skip invalid lines
+                continue;
+            }
+
+            int coffeeId;
+            try {
+                coffeeId = Integer.parseInt(coffeeAttributes[0].trim());
+            } catch (NumberFormatException e) {
+                // Skip invalid lines
+                continue;
+            }
+
             String coffeeName = coffeeAttributes[1].trim();
             double price = Double.parseDouble(coffeeAttributes[2].trim());
             int numShots = Integer.parseInt(coffeeAttributes[3].trim());
-            Coffee.Sugar sugar;
-            if (coffeeAttributes[4].equalsIgnoreCase("yes")) {
-                sugar = Coffee.Sugar.YES;
-            } else {
-                sugar = Coffee.Sugar.NO;
-            }
+            Coffee.Sugar sugar = coffeeAttributes[4].equalsIgnoreCase("yes") ? Coffee.Sugar.YES : Coffee.Sugar.NO;
 
-            // Getting milk data
+            // Extract milk data
             String[] extractMilk = splitParts[1].replace("]", "").replace("\r", "").split(",\\s*");
-
             Set<Milk> milk = new HashSet<>();
-
-            if(extractMilk.length == 0){
-                milk.add(Milk.NONE);
-            }else {
-
-                for (String item : extractMilk) {
+            for (String item : extractMilk) {
+                try {
                     String milkOption = item.toUpperCase().replace("-", "_").strip();
-                    // Mapping strings to the corresponding Milk enum value
                     Milk milkEnum = Milk.valueOf(milkOption);
-                    // Add the Milk enum value to the set
                     milk.add(milkEnum);
-
+                } catch (IllegalArgumentException ignored) {
+                    // Handle invalid milk options gracefully
                 }
             }
 
-
-
-
-            // Extracting extras data
+            // Extract extras data
             String[] extractExtra = splitParts[2].replace("]", "").replace("\r", "").split(",\\s*");
             Set<Extras> extras = new HashSet<>();
+            for (String item : extractExtra) {
+                try {
+                    String extrasOption = item.toUpperCase().replace(" ", "").strip();
+                    Extras extrasEnum = Extras.valueOf(extrasOption);
+                    extras.add(extrasEnum);
+                } catch (IllegalArgumentException ignored) {
+                    // Handle invalid extras options gracefully
+                }
+            }
 
-           if(extractExtra.length == 0){
-               extras.add(Extras.SKIP);
-           }else {
+            // Extract description of the coffee
+            String description = splitParts[3].replace("]", "").replace("\r", "");
 
-               for (String item : extractExtra) {
-                   String extrasOption = item.toUpperCase().replace(" ", "").strip();
-                   // Mapping strings to the corresponding Extras enum value
-                   Extras extrasEnum = Extras.valueOf(extrasOption);
-                   // Add the Extras enum value to the set
-                   extras.add(extrasEnum);
-               }
-           }
-
-            // Extracting description of the coffee
-            String description = splitParts[3].replace("]","").replace("\r","");
-
-            Coffee coffee = new Coffee(coffeeId, coffeeName, price, numShots, sugar, milk, extras, description );
-            menus.addMenu(coffee);
+            Coffee coffee = new Coffee(coffeeId, coffeeName, price, numShots, sugar, milk, extras, description);
+            menus.addCoffeeMenu(coffee);
         }
         return menus;
     }
 
-
-    // displaying result of the matching coffee and asking user to select the coffee if they wish to order.
-    private static void display(List<Coffee> potentialMatch, Coffee userCriteria ){
+    // displaying result of the matching coffee and asking user to select the coffee
+    // if they wish to order.
+    private static void displayCoffeeResults(List<Coffee> potentialMatch, Coffee userCriteria) {
         StringBuilder message = new StringBuilder();
         String[] options = new String[potentialMatch.size()];
-        for(int i=0;i<potentialMatch.size();i++){
+        for (int i = 0; i < potentialMatch.size(); i++) {
             Coffee coffee = potentialMatch.get(i);
             String milkString = coffee.getMilk().toString();
             String extrasString = coffee.getExtras().toString();
@@ -243,21 +473,21 @@ public class MenuSearcher {
             // Remove brackets
             milkString = milkString.substring(1, milkString.length() - 1);
             extrasString = extrasString.substring(1, extrasString.length() - 1);
-            //  message per coffee
+            // message per coffee
             message.append(coffee.getMenuName()).append(" (").append(coffee.getMenuId()).append(")\n")
                     .append(coffee.getDescription()).append("\n")
                     .append("Ingredients:\n")
                     .append("Number of shots: ").append(coffee.getNumberOfShots()).append("\n")
                     .append("Sugar: ").append(coffee.isSugar()).append("\n")
                     .append("Milk options: ").append(milkString).append("\n")
-                    .append("Extra/s: ").append(extrasString).append("\n")
-                    .append("Price: $").append(coffee.getPrice()).append("\n\n");
+                    .append("Extra/s: ").append(extrasString).append("\n");
 
-            //adding potential matchs to the list of options
-            options[i]=potentialMatch.get(i).getMenuName();
+            // adding potential matchs to the list of options
+            options[i] = potentialMatch.get(i).getMenuName();
 
         }
-        String order = (String) JOptionPane.showInputDialog(null, message.toString() + "\n\nPlease select if you want to order coffee:",
+        String order = (String) JOptionPane.showInputDialog(null,
+                message.toString() + "\n\nPlease select if you want to order coffee:",
                 appName, JOptionPane.QUESTION_MESSAGE, null, options, "");
         // Checking if the user selected an option or skipped the order
         if (order != null && !order.isEmpty()) {
@@ -274,38 +504,107 @@ public class MenuSearcher {
             }
 
             writeOrderToFile(user, selectedCoffee, userCriteria);
-            JOptionPane.showMessageDialog(null, "Happy coding geek. have fun", "Order Confirm", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Happy coding geek. have fun", "Order Confirm",
+                    JOptionPane.INFORMATION_MESSAGE);
         } else {
             // User skipped the order
-            JOptionPane.showMessageDialog(null, "Thank you for using our app. see you soon", "Order Skipped", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Thank you for using our app. see you soon", "Order Skipped",
+                    JOptionPane.INFORMATION_MESSAGE);
         }
+    }
+
+    private static void displayTeaResults(List<Tea> potentialMatch, Tea userCriteria) {
+        StringBuilder message = new StringBuilder();
+        String[] options = new String[potentialMatch.size()];
+        for (int i = 0; i < potentialMatch.size(); i++) {
+            Tea tea = potentialMatch.get(i);
+            String milkString = tea.getMilk().toString();
+            String extrasString = tea.getExtras().toString();
+
+            // Remove brackets
+            milkString = milkString.substring(1, milkString.length() - 1);
+            extrasString = extrasString.substring(1, extrasString.length() - 1);
+
+            // Message per tea
+            message.append(tea.getMenuName()).append(" (").append(tea.getMenuId()).append(")\n")
+                    .append(tea.getDescription()).append("\n")
+                    .append("Ingredients:\n")
+                    .append("Temperature: ").append(tea.getTemperature()).append("°C\n")
+                    .append("Steeping Time: ").append(tea.getSteepingTime()).append(" minutes\n")
+                    .append("Sugar: ").append(tea.getSugar()).append("\n")
+                    .append("Milk options: ").append(milkString).append("\n")
+                    .append("Extra/s: ").append(extrasString).append("\n");
+
+            // Adding potential matches to the list of options
+            options[i] = potentialMatch.get(i).getMenuName();
+
+        }
+        String order = (String) JOptionPane.showInputDialog(null,
+                message.toString() + "\n\nPlease select if you want to order tea:",
+                appName, JOptionPane.QUESTION_MESSAGE, null, options, "");
+        // Checking if the user selected an option or skipped the order
+        if (order != null && !order.isEmpty()) {
+            // User selected an option
+            Geek user = getUserInformation();
+
+            // Write to file
+            Tea selectedTea = null;
+            for (Tea tea : potentialMatch) {
+                if (tea.getMenuName().equals(order)) {
+                    selectedTea = tea;
+                    break;
+                }
+            }
+
+            // Now you have the selected tea and its user criteria, you can write the order
+            // to file
+            writeOrderToFile(user, selectedTea, userCriteria);
+            JOptionPane.showMessageDialog(null, "Enjoy your tea! Have a great day!", "Order Confirmation",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            // User skipped the order
+            JOptionPane.showMessageDialog(null, "Thank you for considering our tea menu. Have a great day!",
+                    "Order Skipped", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private static void writeOrderToFile(Geek user, Tea selectedTea, Tea userCriteria) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'writeOrderToFile'");
     }
 
     // getting user infomation and returning record of geek.
     private static Geek getUserInformation() {
         while (true) {
-            String name = JOptionPane.showInputDialog(null, "Please enter your name:", appName, JOptionPane.QUESTION_MESSAGE);
+            String name = JOptionPane.showInputDialog(null, "Please enter your name:", appName,
+                    JOptionPane.QUESTION_MESSAGE);
 
             if (name == null || name.isEmpty()) {
-                JOptionPane.showMessageDialog(null, "Name cannot be empty. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Name cannot be empty. Please try again.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 continue;
             }
 
             if (!isValidFullName(name)) {
-                JOptionPane.showMessageDialog(null, "Invalid name format. Please enter a valid name.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Invalid name format. Please enter a valid name.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 continue;
             }
 
             while (true) {
-                String phoneNumber = JOptionPane.showInputDialog(null, "Please enter your phone number:", appName, JOptionPane.QUESTION_MESSAGE);
+                String phoneNumber = JOptionPane.showInputDialog(null, "Please enter your phone number:", appName,
+                        JOptionPane.QUESTION_MESSAGE);
 
                 if (phoneNumber == null || phoneNumber.isEmpty()) {
-                    JOptionPane.showMessageDialog(null, "Phone number cannot be empty. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Phone number cannot be empty. Please try again.", "Error",
+                            JOptionPane.ERROR_MESSAGE);
                     continue;
                 }
 
                 if (!isValidPhoneNumber(phoneNumber)) {
-                    JOptionPane.showMessageDialog(null, "Invalid phone number format. Please enter a valid phone number.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null,
+                            "Invalid phone number format. Please enter a valid phone number.", "Error",
+                            JOptionPane.ERROR_MESSAGE);
                     continue;
                 }
 
@@ -313,8 +612,6 @@ public class MenuSearcher {
             }
         }
     }
-
-
 
     // validating user name
     public static boolean isValidFullName(String fullName) {
@@ -324,15 +621,12 @@ public class MenuSearcher {
         return matcher.matches();
     }
 
-
-
     // validating user's phone number
     public static boolean isValidPhoneNumber(String phoneNumber) {
         Pattern pattern = Pattern.compile("^\\d{10}$");
         Matcher matcher = pattern.matcher(phoneNumber);
         return matcher.matches();
     }
-
 
     // writing order to file
     private static void writeOrderToFile(Geek user, Coffee selectedCoffee, Coffee userCriteria) {
@@ -349,14 +643,11 @@ public class MenuSearcher {
             writer.write("Item: " + selectedCoffee.getMenuName() + " (" + selectedCoffee.getMenuId() + ")\n");
             writer.write("Milk: " + (milkString) + "\n\n");
 
-
-
             writer.close();
             System.out.println("Order details written to " + fileName);
         } catch (IOException e) {
             System.err.println("Error writing order to file: " + e.getMessage());
         }
     }
-
 
 }
